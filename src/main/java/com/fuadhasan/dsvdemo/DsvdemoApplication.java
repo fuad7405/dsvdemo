@@ -40,7 +40,7 @@ public class DsvdemoApplication {
       fileDelimiter = args[1];
     }
     var application = new DsvdemoApplication();
-    var outputFileName = "JSONL_output.jsonl";
+    var outputFileName = inputFileName.substring(0, inputFileName.lastIndexOf(".")) + ".jsonl";
     application.readAndWriteFile(inputFileName, fileDelimiter, outputFileName);
   }
 

@@ -1,5 +1,6 @@
 package com.fuadhasan.dsvdemo;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -8,6 +9,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.util.StringUtils;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -37,25 +40,35 @@ public class DsvdemoApplication {
       fileDelimiter = args[1];
     }
     var application = new DsvdemoApplication();
-    var dataList = application.readTextFile(inputFileName, fileDelimiter);
     var outputFileName = "JSONL_output.jsonl";
-    application.writeIntoJsonLFile(outputFileName, dataList);
+    application.readAndWriteFile(inputFileName, fileDelimiter, outputFileName);
   }
 
-  public List<String> readTextFile(String inputFileName, String fileDelimiter) {
-    log.info("InputFileName: {}, FileDelimiter: {}", inputFileName, fileDelimiter);
+  public void readAndWriteFile(String inputFileName, String fileDelimiter, String outputFileName) {
+    log.info(
+        "InputFileName: {}, FileDelimiter: {}, OutputFileName: {}",
+        inputFileName,
+        fileDelimiter,
+        outputFileName);
 
-    List<String> dataList = new ArrayList<>();
+    try {
+      Files.deleteIfExists(new File(outputFileName).toPath());
+    } catch (IOException e) {
+      log.error("An exception occurred!", e);
+    }
 
     fileDelimiter = String.format("\\%s", fileDelimiter);
     var regex = fileDelimiter + "(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)";
     // log.info("Regex: {}", regex);
 
     var mapper = new ObjectMapper();
+    mapper.configOverride(String.class).setFormat(JsonFormat.Value.forShape(JsonFormat.Shape.ANY));
     mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     mapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
 
-    try (var bufferedReader = new BufferedReader(new FileReader(inputFileName))) {
+    File inputFile = new File(inputFileName);
+    try (var bufferedReader =
+        new BufferedReader(new FileReader(inputFile, StandardCharsets.UTF_8))) {
       String line;
       List<String> headerNames = new ArrayList<>();
       if ((line = bufferedReader.readLine()) != null) {
@@ -73,21 +86,23 @@ public class DsvdemoApplication {
             value = convertFormattedDateStr(value);
           } else {
             value = value.replace("\"", "");
-            value = value.replace("|", "");
-            value = value.replace(",", "");
+            value = value.replace(" |", "");
+            value = value.replace("|", ",");
+            if (value.endsWith(",")) {
+              value = value.substring(0, value.length() - 1);
+            }
             value = StringUtils.trimWhitespace(value);
           }
           dataMap.put(key, value);
         }
         var jsonString = mapper.writeValueAsString(dataMap);
         // log.info("{}", jsonString);
-        dataList.add(jsonString);
+
+        writeIntoJsonLFile(outputFileName, jsonString);
       }
     } catch (IOException e) {
       log.error("An exception occurred!", e);
     }
-
-    return dataList;
   }
 
   private String convertFormattedDateStr(String value) {
@@ -115,20 +130,13 @@ public class DsvdemoApplication {
     return value;
   }
 
-  public void writeIntoJsonLFile(String outputFileName, List<String> dataList) {
-    log.info("OutputFileName: {}, DataSize: {}", outputFileName, dataList.size());
+  private void writeIntoJsonLFile(String outputFileName, String data) {
+    // log.info("OutputFileName: {}, Data: {}", outputFileName, data);
 
-    try (var bufferedWriter =
-        new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputFileName)))) {
-      dataList.forEach(
-          data -> {
-            try {
-              bufferedWriter.write(data);
-              bufferedWriter.newLine();
-            } catch (IOException e) {
-              log.error("An exception occurred!", e);
-            }
-          });
+    File outputFile = new File(outputFileName);
+    try (var printWriter = new PrintWriter(new BufferedWriter(new FileWriter(outputFile, true)))) {
+      printWriter.println(data);
+      printWriter.flush();
     } catch (IOException e) {
       log.error("An exception occurred!", e);
     }

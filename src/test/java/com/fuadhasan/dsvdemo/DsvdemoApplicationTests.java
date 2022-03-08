@@ -2,8 +2,6 @@ package com.fuadhasan.dsvdemo;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.File;
 import java.io.IOException;
@@ -14,7 +12,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * @author Fuad Hasan
  * @since 05-Mar-2022
  */
-@ExtendWith(MockitoExtension.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class DsvdemoApplicationTests {

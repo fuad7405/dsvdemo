@@ -3,10 +3,7 @@ package com.fuadhasan.dsvdemo;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -20,17 +17,14 @@ import java.util.stream.Collectors;
  * @author Fuad Hasan
  * @since 05-Mar-2022
  */
-@Slf4j
-@SpringBootApplication
 public class DsvdemoApplication {
 
   private static final DateTimeFormatter dateTimeFormatter =
       DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
   public static void main(String[] args) {
-    SpringApplication.run(DsvdemoApplication.class, args);
     if (args == null || args.length < 1) {
-      log.info("Please pass input file name in cmd");
+      System.err.println("Please pass input file name in cmd");
       return;
     }
     var inputFileName = args[0];
@@ -45,21 +39,31 @@ public class DsvdemoApplication {
   }
 
   public void readAndWriteFile(String inputFileName, String fileDelimiter, String outputFileName) {
-    log.info(
-        "InputFileName: {}, OutputFileName: {}, FileDelimiter: {}",
-        inputFileName,
-        outputFileName,
-        fileDelimiter);
+    System.out.println(
+        "InputFileName: "
+            + inputFileName
+            + ", OutputFileName: "
+            + outputFileName
+            + ", FileDelimiter: "
+            + fileDelimiter);
+
+    if (StringUtils.isBlank(inputFileName)
+        || StringUtils.isBlank(fileDelimiter)
+        || StringUtils.isBlank(outputFileName)) {
+      System.err.println("Please pass InputFileName, OutputFileName and FileDelimiter");
+      return;
+    }
 
     try {
       Files.deleteIfExists(new File(outputFileName).toPath());
     } catch (IOException e) {
-      log.error("An exception occurred!", e);
+      e.printStackTrace();
+      System.err.println(e);
     }
 
     fileDelimiter = String.format("\\%s", fileDelimiter);
     var regex = fileDelimiter + "(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)";
-    // log.info("Regex: {}", regex);
+    // System.out.println("Regex: " + regex);
 
     var mapper = new ObjectMapper();
     mapper.configOverride(String.class).setFormat(JsonFormat.Value.forShape(JsonFormat.Shape.ANY));
@@ -101,17 +105,19 @@ public class DsvdemoApplication {
           }
         }
         var jsonString = mapper.writeValueAsString(dataMap);
-        // log.info("{}", jsonString);
+        // System.out.println(jsonString);
 
         writeIntoJsonLFile(outputFileName, jsonString);
       }
     } catch (IOException e) {
-      log.error("An exception occurred!", e);
+      e.printStackTrace();
+      System.err.println(e);
     }
+    System.out.println("Converts DSV files into JSONL formatted file.");
   }
 
   private String convertFormattedDateStr(String value) {
-    // log.info("DateStr: {}", value);
+    // System.out.println("DateStr: " + value);
     LocalDate localDate;
     try {
       localDate = LocalDate.parse(value);
@@ -136,14 +142,15 @@ public class DsvdemoApplication {
   }
 
   private void writeIntoJsonLFile(String outputFileName, String data) {
-    // log.info("OutputFileName: {}, Data: {}", outputFileName, data);
+    // System.out.println("OutputFileName: " + outputFileName + ", Data: " + data);
 
     File outputFile = new File(outputFileName);
     try (var printWriter = new PrintWriter(new BufferedWriter(new FileWriter(outputFile, true)))) {
       printWriter.println(data);
       printWriter.flush();
     } catch (IOException e) {
-      log.error("An exception occurred!", e);
+      e.printStackTrace();
+      System.err.println(e);
     }
   }
 }

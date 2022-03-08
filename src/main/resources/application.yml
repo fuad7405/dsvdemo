@@ -1,9 +1,0 @@
-spring:
-  application:
-    name: DSV Demo
-  profiles:
-    active: dev
-  main:
-    allow-bean-definition-overriding: true
-  jackson:
-    date-format: yyyy-MM-dd

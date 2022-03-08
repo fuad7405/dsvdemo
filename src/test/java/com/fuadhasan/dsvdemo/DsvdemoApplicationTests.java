@@ -8,6 +8,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.io.File;
 import java.io.IOException;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 /**
  * @author Fuad Hasan
  * @since 05-Mar-2022
@@ -17,22 +19,23 @@ import java.io.IOException;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class DsvdemoApplicationTests {
 
-  DsvdemoApplication application = new DsvdemoApplication();
+  DsvdemoApplication application;
+  ClassLoader classLoader;
 
-  String outputFileName1 = "JSONL_output_test_1.jsonl";
-  String outputFileName2 = "JSONL_output_test_2.jsonl";
   String originOutputFileName = "JSONL_output.jsonl";
 
-  ClassLoader classLoader = this.getClass().getClassLoader();
-
   @BeforeAll
-  void readAndWriteTwoDifFile() {}
+  void readAndWriteTwoDifFile() {
+    application = new DsvdemoApplication();
+    classLoader = this.getClass().getClassLoader();
+  }
 
   @Test
   @Order(1)
   void testFirstInputFile() throws IOException {
     var inputFileName = "DSV_input_1.txt";
     var fileDelimiter = ",";
+    String outputFileName1 = "JSONL_output_test_1.jsonl";
 
     File inputFile = new File(classLoader.getResource(inputFileName).getFile());
     File originalOutputFile = new File(classLoader.getResource(originOutputFileName).getFile());
@@ -42,8 +45,7 @@ class DsvdemoApplicationTests {
     File outputFile = new File(outputFileName1);
 
     ObjectMapper objectMapper = new ObjectMapper();
-    Assertions.assertEquals(
-        objectMapper.readTree(originalOutputFile), objectMapper.readTree(outputFile));
+    assertEquals(objectMapper.readTree(originalOutputFile), objectMapper.readTree(outputFile));
   }
 
   @Test
@@ -51,6 +53,7 @@ class DsvdemoApplicationTests {
   void testSecondInputFile() throws IOException {
     var inputFileName = "DSV_input_2.txt";
     var fileDelimiter = "|";
+    String outputFileName2 = "JSONL_output_test_2.jsonl";
 
     File inputFile = new File(classLoader.getResource(inputFileName).getFile());
     File originalOutputFile = new File(classLoader.getResource(originOutputFileName).getFile());
@@ -60,17 +63,6 @@ class DsvdemoApplicationTests {
     File outputFile = new File(outputFileName2);
 
     ObjectMapper objectMapper = new ObjectMapper();
-    Assertions.assertEquals(
-        objectMapper.readTree(originalOutputFile), objectMapper.readTree(outputFile));
-  }
-
-  @Test
-  @Order(3)
-  void testTwoOutputFile() throws IOException {
-    File outputFile1 = new File(outputFileName1);
-    File outputFile2 = new File(outputFileName2);
-
-    ObjectMapper objectMapper = new ObjectMapper();
-    Assertions.assertEquals(objectMapper.readTree(outputFile1), objectMapper.readTree(outputFile2));
+    assertEquals(objectMapper.readTree(originalOutputFile), objectMapper.readTree(outputFile));
   }
 }

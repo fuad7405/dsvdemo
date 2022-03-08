@@ -4,9 +4,9 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.util.StringUtils;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -46,10 +46,10 @@ public class DsvdemoApplication {
 
   public void readAndWriteFile(String inputFileName, String fileDelimiter, String outputFileName) {
     log.info(
-        "InputFileName: {}, FileDelimiter: {}, OutputFileName: {}",
+        "InputFileName: {}, OutputFileName: {}, FileDelimiter: {}",
         inputFileName,
-        fileDelimiter,
-        outputFileName);
+        outputFileName,
+        fileDelimiter);
 
     try {
       Files.deleteIfExists(new File(outputFileName).toPath());
@@ -78,22 +78,27 @@ public class DsvdemoApplication {
       while ((line = bufferedReader.readLine()) != null) {
         var itemDataList = Arrays.stream(line.split(regex, -1)).collect(Collectors.toList());
 
-        Map<String, String> dataMap = new LinkedHashMap<>();
+        Map<String, Object> dataMap = new HashMap<>();
         for (int i = 0; i < headerNames.size(); i++) {
           String key = headerNames.get(i);
           String value = itemDataList.get(i);
           if (key.contains("date")) {
             value = convertFormattedDateStr(value);
+            dataMap.put(key, value);
           } else {
-            value = value.replace("\"", "");
-            value = value.replace(" |", "");
-            value = value.replace("|", ",");
-            if (value.endsWith(",")) {
-              value = value.substring(0, value.length() - 1);
+            if (StringUtils.isNumeric(value)) {
+              dataMap.put(key, Integer.parseInt(value));
+            } else {
+              value = value.replace("\"", "");
+              value = value.replace(" |", "");
+              value = value.replace("|", ",");
+              if (value.endsWith(",")) {
+                value = value.substring(0, value.length() - 1);
+              }
+              value = StringUtils.trimToEmpty(value);
+              dataMap.put(key, value);
             }
-            value = StringUtils.trimWhitespace(value);
           }
-          dataMap.put(key, value);
         }
         var jsonString = mapper.writeValueAsString(dataMap);
         // log.info("{}", jsonString);
